@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: LINE server
+
+Parameters:
+
+  TemplateBucketName:
+    Type: String
+    Description: template bucket name
+
+  ChannelSecret:
+    Type: String
+    Description: channel secret
+
+  AccessToken:
+    Type: String
+    Description: access token
+
+Resources:
+
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: LineMessages
+      MessageRetentionPeriod: 86400
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      RoleName: LambdaMock
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  # --- Line Bot API ---
+
+  BotServer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs8.10
+      Handler: index.handler
+      Code:
+        S3Bucket: !Ref TemplateBucketName
+        S3Key: zip/botServer.js.zip
+      Description: line bot server
+      FunctionName: BotServer
+      Environment:
+        Variables:
+          SQS_URL: !Ref Queue
+      MemorySize: 128
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: Rest Api
+      Name: line-api
+
+  Method:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !GetAtt ApiGateway.RootResourceId
+      HttpMethod: POST
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.header.X-Line-Signature: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BotServer.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+
+  FunctionInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref BotServer
+      Principal: apigateway.amazonaws.com
+      SourceArn: {"Fn::Join" : ["", ["arn:aws:execute-api:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":", {"Ref": "ApiGateway"}, "/*/POST/"]]}
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: [Method]
+    Properties:
+      Description: Sample Deployment
+      RestApiId: !Ref ApiGateway
+      StageName: prd
+
+  # --- LINE Job Worker Function ---
+
+  JobWorker:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs8.10
+      Handler: index.handler
+      Code:
+        S3Bucket: !Ref TemplateBucketName
+        S3Key: zip/jobWorker.js.zip
+      Description: line bot server
+      FunctionName: JobWorker
+      Environment:
+        Variables:
+          SQS_URL: !Ref Queue
+          CHANNEL_SECRET: !Ref ChannelSecret
+          ACCESS_TOKEN: !Ref AccessToken
+      MemorySize: 128
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
