@@ -2,6 +2,7 @@ const crypto = require('crypto')
 
 const AWS = require('aws-sdk')
 const SQS = new AWS.SQS()
+const S3 = new AWS.S3()
 
 const LINE = require('@line/bot-sdk')
 const CLIENT = new LINE.Client({
@@ -25,21 +26,45 @@ exports.handler = async (event, context, callback) => {
 
       for (let event of body.events) {
         // 各メッセージに施す処理
-
         console.log({"event": event})
-        let text = event.message.text
+
+        let reply = {}
+
+        if (event.message.type === 'text') {
+          reply.type = 'text'
+          reply.text = event.message.text
+        }
+
+        if (event.message.type === 'image') {
+          let filename = event.message.id + '.jpg'
+
+          let buffer = await getContent(event.message.id)
+          let putParams = {
+            Bucket: process.env.BUCKET,
+            Key: 'jpg/' + filename,
+            Body: buffer
+          }
+
+          let resp = await S3.putObject(putParams).promise()
+          .catch((err) => {
+            console.log({"S3Error": err})
+          })
+
+          let url = 'https://' + process.env.BUCKET + '.s3.amazonaws.com/jpg/' + filename
+
+          reply.type = 'image'
+          reply.originalContentUrl = url
+          reply.previewImageUrl = url
+        }
 
         // 送信処理
 
-        const reply = {
-          'type': 'text',
-          'text': text
+        if (reply.hasOwnProperty('type')) {
+          await CLIENT.replyMessage(event.replyToken, reply)
+          .catch((err) => {
+            console.log({"replyMessageError": err, reply})
+          })
         }
-
-        await CLIENT.replyMessage(event.replyToken, reply)
-        .catch((err) => {
-          console.log({"replyMessageError": err, reply})
-        })
       }
     } else {
       console.log({"signatureError": mass})
@@ -56,4 +81,26 @@ exports.handler = async (event, context, callback) => {
       console.log({'deleteMessageError': err})
     })
   }
+}
+
+const getContent = (messageId) => {
+  return new Promise((resolve, reject) => {
+    CLIENT.getMessageContent(messageId)
+    .then((stream) => {
+      var content = []
+
+      stream
+      .on('data', (chunk) => {
+        console.log({'chunk': chunk})
+        content.push(new Buffer(chunk))
+      })
+      .on('error', (err) => {
+          reject(err)
+      })
+      .on('end', function(){
+        console.log({'getContentEnd': content})
+        resolve(Buffer.concat(content))
+      })
+    })
+  })
 }
