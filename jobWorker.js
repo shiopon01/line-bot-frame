@@ -30,31 +30,33 @@ exports.handler = async (event, context, callback) => {
 
         let reply = {}
 
-        if (event.message.type === 'text') {
-          reply.type = 'text'
-          reply.text = event.message.text
-        }
+        switch (event.message.type) {
+          case 'text':
+            reply.type = 'text'
+            reply.text = event.message.text
+            break
 
-        if (event.message.type === 'image') {
-          let filename = event.message.id + '.jpg'
+          case 'image':
+            let filename = event.message.id + '.jpg'
 
-          let buffer = await getContent(event.message.id)
-          let putParams = {
-            Bucket: process.env.BUCKET,
-            Key: 'jpg/' + filename,
-            Body: buffer
-          }
+            let buffer = await getContent(event.message.id)
+            let putParams = {
+              Bucket: process.env.BUCKET,
+              Key: 'jpg/' + filename,
+              Body: buffer
+            }
 
-          let resp = await S3.putObject(putParams).promise()
-          .catch((err) => {
-            console.log({"S3Error": err})
-          })
+            let resp = await S3.putObject(putParams).promise()
+            .catch((err) => {
+              console.log({"S3Error": err})
+            })
 
-          let url = 'https://' + process.env.BUCKET + '.s3.amazonaws.com/jpg/' + filename
+            let url = 'https://' + process.env.BUCKET + '.s3.amazonaws.com/jpg/' + filename
 
-          reply.type = 'image'
-          reply.originalContentUrl = url
-          reply.previewImageUrl = url
+            reply.type = 'image'
+            reply.originalContentUrl = url
+            reply.previewImageUrl = url
+            break
         }
 
         // 送信処理
