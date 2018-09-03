@@ -1,9 +1,14 @@
+/**
+ * index.js
+ * 証明書を確認する
+ */
+
 const crypto = require('crypto')
 
 const AWS = require('aws-sdk')
 const SQS = new AWS.SQS()
 
-const replyProcessing = require('./reply')
+const replyProcessing = require('./reply.js')
 
 exports.handler = async (event, context, callback) => {
   // SQS records

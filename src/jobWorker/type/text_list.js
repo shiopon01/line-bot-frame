@@ -1,3 +1,9 @@
+/**
+ * text_list.js
+ * type: text, message:`list`
+ * 画像のカルーセルを表示
+ */
+
 const AWS = require('aws-sdk')
 const S3 = new AWS.S3()
 

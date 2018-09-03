@@ -1,26 +1,27 @@
-// const axios = require('axios')
-const AWS = require('aws-sdk')
+/**
+ * reply.js
+ * 返信処理のメイン
+ * メッセージのタイプで処理を切り替える
+ */
+
 const LINE = require('@line/bot-sdk')
 const CLIENT = new LINE.Client({
   channelAccessToken: process.env.ACCESS_TOKEN
 })
 
-const listfunc = require('./text_list.js')
-const imagefunc = require('./image_put.js')
+const type = require('./type')
 
 const reply = async (lineMessage) => {
-
   for (let event of lineMessage.events) {
     // console.log({"event": event})
 
     let reply
     switch (event.message.type) {
       case 'text':
-        // console.log('text route: text is ', event.message.text)
 
         switch (event.message.text) {
           case 'list':
-            reply = await listfunc()
+            reply = await type.text.list()
             break
 
           default:
@@ -32,9 +33,8 @@ const reply = async (lineMessage) => {
         break
 
       case 'image':
-        // console.log('image route: image-id is ', event.message.id)
 
-        reply = await imagefunc(event.message.id)
+        reply = await type.image.put(event.message.id)
         break
 
       default:
@@ -46,7 +46,7 @@ const reply = async (lineMessage) => {
         }
     }
 
-    // 送信処理
+    // 送信
     console.log(`LOG_${__filename}: `, {reply})
 
     if (reply.hasOwnProperty('type')) {

@@ -1,3 +1,9 @@
+/**
+ * image_put.js
+ * type: image
+ * 送信された画像をそのまま返す
+ */
+
 const AWS = require('aws-sdk')
 const S3 = new AWS.S3()
 const LINE = require('@line/bot-sdk')
