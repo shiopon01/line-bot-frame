@@ -2,16 +2,13 @@ const AWS = require('aws-sdk')
 const S3 = new AWS.S3()
 
 const list = async () => {
-
   let objs = await getImageObjects()
-  console.log('HEY GETIMAGE', objs)
 
   let filenames = []
   for (let i = 0; (i < objs.Contents.length) && (i < 10); i++) {
     filenames.push(objs.Contents[i].Key)
   }
 
-  console.log('filenames ', filenames)
   let reply
 
   if (filenames.length > 0) {
@@ -24,7 +21,6 @@ const list = async () => {
       }
 
       let url = 'https://' + process.env.BUCKET + '.s3.amazonaws.com/' + image
-      console.log('URL ', url)
 
       columns.push({
         imageUrl: url,
@@ -46,7 +42,6 @@ const list = async () => {
     }
   }
 
-  console.log('CHECK ', reply)
   return reply || {}
 }
 

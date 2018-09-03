@@ -17,7 +17,6 @@ const reply = async (lineMessage) => {
     let reply
     switch (event.message.type) {
       case 'text':
-
         console.log('text route: text is ', event.message.text)
 
         switch (event.message.text) {
@@ -35,8 +34,14 @@ const reply = async (lineMessage) => {
         break
 
       case 'image':
-        // await imagefunc(event.message.id)
+        console.log('image route: image-id is ', event.message.id)
+
+        reply = await imagefunc(event.message.id)
+        console.log("LOG: " + "imagefunc end ", reply)
         break
+
+      default:
+        console.log('default route:')
     }
 
     // 送信処理
