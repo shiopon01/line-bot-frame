@@ -1,5 +1,0 @@
-{
-  "dependencies": {
-    "@line/bot-sdk": "^6.2.1"
-  }
-}

@@ -1,15 +1,10 @@
 all: compress
 compress:
-	mkdir zip
-	cp botServer.js index.js
-	zip -r zip/botServer.js.zip index.js
-	rm index.js
-	cp jobWorker.js index.js
-	zip -r zip/jobWorker.js.zip index.js node_modules
-	rm index.js
+	rm -f zip/*.zip
+	cd src/botServer; zip    ../../zip/botServer.js.zip *.js
+	cd src/jobWorker;	zip -r ../../zip/jobWorker.js.zip *.js node_modules reply
 
 clean:
-	rm -f zip/*
-	rmdir zip
+	rm -f zip/*.zip
 
 .PHONY: all clean
