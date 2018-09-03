@@ -2,10 +2,10 @@ const crypto = require('crypto')
 
 const AWS = require('aws-sdk')
 const SQS = new AWS.SQS()
-const reply = require('./reply')
+
+const replyProcessing = require('./reply')
 
 exports.handler = async (event, context, callback) => {
-
   // SQS records
   let records = event.Records
 
@@ -18,13 +18,13 @@ exports.handler = async (event, context, callback) => {
 
     if (signature === checkHeader) {
       let line = JSON.parse(mass.body)
-      reply(line)
+      await replyProcessing(line)
 
     } else {
       console.log({"signatureError": mass})
     }
 
-    // 以下、SQSのメッセージを削除する処理
+    // SQSのメッセージを削除
     let params = {
       QueueUrl: process.env.SQS_URL,
       ReceiptHandle: record.receiptHandle
