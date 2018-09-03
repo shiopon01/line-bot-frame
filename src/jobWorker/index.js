@@ -10,7 +10,7 @@ exports.handler = async (event, context, callback) => {
   let records = event.Records
 
   for (let record of records) {
-    // LINE Bot Serverに渡されたAPIリクエストの詳細
+    // API Gateway Request Detail (httpStatus, headers, body ...)
     let mass = JSON.parse(record.body)
 
     let signature = crypto.createHmac('sha256', process.env.CHANNEL_SECRET).update(mass.body).digest('base64')

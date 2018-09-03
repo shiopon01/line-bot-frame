@@ -49,10 +49,7 @@ const reply = async (lineMessage) => {
     // console.log({"reply": JSON.stringify(reply)})
 
     if (reply.hasOwnProperty('type')) {
-      CLIENT.replyMessage(event.replyToken, reply)
-      .then((res) => {
-        console.log({"replyMessageOK": res})
-      })
+      await CLIENT.replyMessage(event.replyToken, reply)
       .catch((err) => {
         console.log({"replyMessageError": err})
       })
